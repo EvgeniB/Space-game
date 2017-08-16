@@ -4,18 +4,25 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="jqueryrotate.js"></script>
     <script>//Main script
     var background_img;
+    var spaceship_img;
+    var canvas;
+    var ctx;
     class GameState {
         constructor() {
             this.maxCelestialObj = 1000;
-            this.fps = 250;
+            this.fps = 1;
             this.width = 1000, this.height = 800;
             this.CelestialObj = 0;
             this.CelestialObjs = [];
             this.dx = 0;
-            this.dy = 1000;
-            this.intervalID = setInterval(this.run_loop.bind(this), 1000 / this.fps);
+            this.dy = 0;
+            this.left = 0, this.right = 0, this.top = 0, this.down = 0;
+            this.angle = 0;
+            this.speed = 0;
+            //this.intervalID = setInterval(this.run_loop.bind(this), 1000 / this.fps);
 
             while(this.CelestialObj < this.maxCelestialObj) {
                 this.CelestialObj++;
@@ -25,17 +32,17 @@
                 this.CelestialObjs.push(new CelestialObject(x, y, size));
             }
 
-            ctx.drawImage(background_img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
-
         }
 
         update() {
-
+            this.move();
+            this.dx += this.speed*Math.cos(Math.PI/180*(this.angle-90));
+            this.dy += this.speed*Math.sin(Math.PI/180*(this.angle-90));
         }
 
         draw() {
-            let canvas = document.getElementById("myCanvas");
-            let ctx = canvas.getContext("2d");
+            //let canvas = document.getElementById("myCanvas");
+            //let ctx = canvas.getContext("2d");
             //var grd = ctx.createLinearGradient(0, 0, this.width, this.height);
             //grd.addColorStop(0, "black");
             //grd.addColorStop(1, "#00001a");
@@ -51,7 +58,7 @@
             //    ctx.drawImage(img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
             //};
             ///"http://zebu.uoregon.edu/hudf/hudf_300dpi.jpg";
-            //ctx.drawImage(background_img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(background_img, this.dx, this.dy, canvas.width*2, canvas.height*2, 0, 0, canvas.width, canvas.height);
             for(let i=0;i<this.CelestialObj;i++) {
                 let x = this.CelestialObjs[i].x, y = this.CelestialObjs[i].y,
                     size = this.CelestialObjs[i].size;
@@ -67,13 +74,47 @@
                 //ctx.stroke();
             }
 
-            var img = new Image;
-            img.src = "https://raw.githubusercontent.com/EvgeniB/EvgeniB.github.io/master/boss1.png";
-            ctx.drawImage(img, this.width/2 - 64, this.height/2 - 64);
+            ctx.save();
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(Math.PI/180*this.angle);
+            ctx.drawImage(spaceship_img, -64, -64);
+            ctx.restore();
+        }
+
+        move() {
+            if (this.left == 1) {
+                this.angle--;
+                //this.moveLeft();
+            }
+            if (this.right == 1) {
+                this.angle++;
+                //this.moveRight();
+            }
+            if (this.up == 1) {
+                this.speed++;
+                //this.moveUp();
+            }
+            if (this.down == 1) {
+                this.speed--;
+                //this.moveDown();
+            }
+        }
+
+        moveLeft() {
+            this.dx -= 1;
+        }
+
+        moveRight() {
+            this.dx += 1;
+        }
+
+        moveDown() {
+            this.dy += 1;
         }
 
         moveUp() {
             this.dy -= 1;
+            /*
             for(let i=0;i<this.CelestialObj;i++) {
                 this.CelestialObjs[i].y += 10;
             }
@@ -92,10 +133,11 @@
                 let y = 0;
                 let size = Number(Math.random()*1);
                 this.CelestialObjs.push(new CelestialObject(x, y, size));
-            }
+            }*/
         }
 
         run_loop() {
+            requestAnimFrame( this.run_loop.bind(this) );
             this.update();
             this.draw();
         }
@@ -116,20 +158,33 @@
 
 
     }
+    window.requestAnimFrame = (function(){
+        return  window.requestAnimationFrame   ||
+            window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame    ||
+            window.oRequestAnimationFrame      ||
+            window.msRequestAnimationFrame     ||
+            function(/* function */ callback, /* DOMElement */ element){
+                window.setTimeout(callback, 1000 / 60);
+            };
+    })();
+
     var GameObj;
     window.onload = function(){
-        var canvas = document.getElementById("myCanvas");
-        var ctx = canvas.getContext("2d");
+        canvas = document.getElementById("myCanvas");
+        ctx = canvas.getContext("2d");
 
         background_img = new Image;
         background_img.src = "http://i.imgur.com/FVxGXU5.jpg";//"https://images-assets.nasa.gov/image/PIA03654/PIA03654~orig.jpg";
-        background_img.onload = function() {
+        spaceship_img = new Image;
+        spaceship_img.src = "https://raw.githubusercontent.com/EvgeniB/EvgeniB.github.io/master/boss1.png";
+        /*background_img.onload = function() {
             ctx.mozImageSmoothingEnabled = false;
             ctx.webkitImageSmoothingEnabled = false;
             ctx.msImageSmoothingEnabled = false;
             ctx.imageSmoothingEnabled = false;
-            background_img.style.imageRendering = "pixelated";
-        };
+            //background_img.style.imageRendering = "pixelated";
+        };*/
 
         gameObj = new GameState();
         gameObj.run_loop();
@@ -138,16 +193,42 @@
     $(document).keydown(function(e) {
         switch(e.which) {
             case 37: // left
+                gameObj.left = 1;
                 break;
 
             case 38: // up
-                gameObj.moveUp();
+                gameObj.up = 1;
                 break;
 
             case 39: // right
+                gameObj.right = 1;
                 break;
 
             case 40: // down
+                gameObj.down = 1;
+                break;
+
+            default: return; // exit this handler for other keys
+        }
+        e.preventDefault(); // prevent the default action (scroll / move caret)
+    });
+
+    $(document).keyup(function(e) {
+        switch(e.which) {
+            case 37: // left
+                gameObj.left = 0;
+                break;
+
+            case 38: // up
+                gameObj.up = 0;
+                break;
+
+            case 39: // right
+                gameObj.right = 0;
+                break;
+
+            case 40: // down
+                gameObj.down = 0;
                 break;
 
             default: return; // exit this handler for other keys
