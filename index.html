@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>//Main script
+    var background_img;
+    class GameState {
+        constructor() {
+            this.maxCelestialObj = 1000;
+            this.fps = 250;
+            this.width = 1000, this.height = 800;
+            this.CelestialObj = 0;
+            this.CelestialObjs = [];
+            this.dx = 0;
+            this.dy = 1000;
+            this.intervalID = setInterval(this.run_loop.bind(this), 1000 / this.fps);
+
+            while(this.CelestialObj < this.maxCelestialObj) {
+                this.CelestialObj++;
+                let x = Number(Math.random()*this.width);
+                let y = Number(Math.random()*this.height);
+                let size = Number(Math.random()*1);
+                this.CelestialObjs.push(new CelestialObject(x, y, size));
+            }
+
+            ctx.drawImage(background_img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+
+        }
+
+        update() {
+
+        }
+
+        draw() {
+            let canvas = document.getElementById("myCanvas");
+            let ctx = canvas.getContext("2d");
+            //var grd = ctx.createLinearGradient(0, 0, this.width, this.height);
+            //grd.addColorStop(0, "black");
+            //grd.addColorStop(1, "#00001a");
+            //ctx.fillStyle = "black";
+            //ctx.fillRect(0, 0, canvas.width, canvas.height);
+            //let img = new Image;
+            //img.src = "http://i.imgur.com/FVxGXU5.jpg";//"https://images-assets.nasa.gov/image/PIA03654/PIA03654~orig.jpg";
+            //img.onload = function() {
+            //    ctx.mozImageSmoothingEnabled = false;
+            //    ctx.webkitImageSmoothingEnabled = false;
+            //    ctx.msImageSmoothingEnabled = false;
+            //    ctx.imageSmoothingEnabled = false;
+            //    ctx.drawImage(img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+            //};
+            ///"http://zebu.uoregon.edu/hudf/hudf_300dpi.jpg";
+            //ctx.drawImage(background_img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+            for(let i=0;i<this.CelestialObj;i++) {
+                let x = this.CelestialObjs[i].x, y = this.CelestialObjs[i].y,
+                    size = this.CelestialObjs[i].size;
+                ctx.beginPath();
+                ctx.arc(x, y, size,0,2*Math.PI);
+                ctx.fillStyle = 'white';
+                //ctx.fill();
+                ctx.shadowBlur = 2;
+                ctx.shadowColor = "white";
+                //ctx.stroke();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'white';
+                //ctx.stroke();
+            }
+
+            var img = new Image;
+            img.src = "https://raw.githubusercontent.com/EvgeniB/EvgeniB.github.io/master/boss1.png";
+            ctx.drawImage(img, this.width/2 - 64, this.height/2 - 64);
+        }
+
+        moveUp() {
+            this.dy -= 1;
+            for(let i=0;i<this.CelestialObj;i++) {
+                this.CelestialObjs[i].y += 10;
+            }
+
+            for(let i=0;i<this.CelestialObj;i++) {
+                if (this.CelestialObjs[i].y > this.height) {
+                    this.CelestialObjs.splice(i, 1);
+                    this.CelestialObj--;
+                    i--;
+                }
+            }
+
+            while(this.CelestialObj < this.maxCelestialObj) {
+                this.CelestialObj++;
+                let x = Number(Math.random()*this.width);
+                let y = 0;
+                let size = Number(Math.random()*1);
+                this.CelestialObjs.push(new CelestialObject(x, y, size));
+            }
+        }
+
+        run_loop() {
+            this.update();
+            this.draw();
+        }
+    }
+
+    class CelestialObject {
+        constructor(x, y, size) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+        }
+        toString() {
+            return `(${this.x}, ${this.y}, ${this.size})`;
+        }
+    }
+
+    class Space {
+
+
+    }
+    var GameObj;
+    window.onload = function(){
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+
+        background_img = new Image;
+        background_img.src = "http://i.imgur.com/FVxGXU5.jpg";//"https://images-assets.nasa.gov/image/PIA03654/PIA03654~orig.jpg";
+        background_img.onload = function() {
+            ctx.mozImageSmoothingEnabled = false;
+            ctx.webkitImageSmoothingEnabled = false;
+            ctx.msImageSmoothingEnabled = false;
+            ctx.imageSmoothingEnabled = false;
+            background_img.style.imageRendering = "pixelated";
+        };
+
+        gameObj = new GameState();
+        gameObj.run_loop();
+    }
+
+    $(document).keydown(function(e) {
+        switch(e.which) {
+            case 37: // left
+                break;
+
+            case 38: // up
+                gameObj.moveUp();
+                break;
+
+            case 39: // right
+                break;
+
+            case 40: // down
+                break;
+
+            default: return; // exit this handler for other keys
+        }
+        e.preventDefault(); // prevent the default action (scroll / move caret)
+    });
+    </script>
+</head>
+<body style="background:black;">
+<canvas id="myCanvas" width="1000" height="800" style="display:block;margin:auto;"></canvas>
+
+</body>
+</html>
