@@ -3,8 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+        @media (min-width: 768px) {
+            .container {
+                width: 100%;
+            }
+        }
+
+        p {
+            /*color: white;*/
+        }
+    </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="jqueryrotate.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <script>//Main script
     var background_img;
     var spaceship_img;
@@ -17,11 +29,16 @@
             this.width = 1000, this.height = 800;
             this.CelestialObj = 0;
             this.CelestialObjs = [];
-            this.dx = 0;
-            this.dy = 0;
+            this.dx = 1300;
+            this.dy = 500;
+            this.speedx = 0, this.speedy = 0;
             this.left = 0, this.right = 0, this.top = 0, this.down = 0;
-            this.angle = 0;
+            this.angle = 0, this.angularmomentum = 0;
             this.speed = 0;
+            this.speed_percent = 0;
+            this.g = 9.8
+            this.accel = 0;
+            this.stress = 0;
             //this.intervalID = setInterval(this.run_loop.bind(this), 1000 / this.fps);
 
             while(this.CelestialObj < this.maxCelestialObj) {
@@ -36,8 +53,28 @@
 
         update() {
             this.move();
-            this.dx += this.speed*Math.cos(Math.PI/180*(this.angle-90));
-            this.dy += this.speed*Math.sin(Math.PI/180*(this.angle-90));
+
+            //this.speedx = this.speed*Math.cos(Math.PI/180*(this.angularmomentum-90));
+            //this.speedy = this.speed*Math.sin(Math.PI/180*(this.angularmomentum-90));
+            this.dx += this.speedx*0.00000000005;
+            this.dy += this.speedy*0.00000000005;
+            //this.dx += this.speed*Math.cos(Math.PI/180*(this.angularmomentum-90))*1;
+            //this.dy += this.speed*Math.sin(Math.PI/180*(this.angularmomentum-90))*1;
+
+            this.speed_percent = Math.sqrt(this.speedx*this.speedx + this.speedy*this.speedy)/299792458 * 100;
+            $('#speed_p').text(String( Math.trunc(Math.sqrt(this.speedx*this.speedx + this.speedy*this.speedy))) + " m/s");
+            $('#speed_progress').css('width', this.speed_percent+'%').attr('aria-valuenow', this.speed_percent);
+            $('#accel_p').text(Math.trunc(this.accel/9.8) + "G (" + Math.trunc(this.accel) + "m/s)");
+            $('#acceleration_progress').css('width', this.accel/88*100+'%').attr('aria-valuenow', this.accel/88*100);
+
+            if (this.accel > 10) {
+                this.stress += (this.stress+0.01)*this.accel/9.8;
+            }
+
+            else if (this.stress > 1) { this.stress--; }
+
+            $('#stress_progress').css('width', this.stress+'%').attr('aria-valuenow', this.stress);
+            //$('.progress-bar').text(String( Math.trunc(Math.sqrt(this.speedx*this.speedx + this.speedy*this.speedy))));
         }
 
         draw() {
@@ -58,7 +95,7 @@
             //    ctx.drawImage(img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
             //};
             ///"http://zebu.uoregon.edu/hudf/hudf_300dpi.jpg";
-            ctx.drawImage(background_img, this.dx, this.dy, canvas.width*2, canvas.height*2, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(background_img, this.dx, this.dy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
             for(let i=0;i<this.CelestialObj;i++) {
                 let x = this.CelestialObjs[i].x, y = this.CelestialObjs[i].y,
                     size = this.CelestialObjs[i].size;
@@ -83,19 +120,23 @@
 
         move() {
             if (this.left == 1) {
-                this.angle--;
+                this.angle -= 1.5;
                 //this.moveLeft();
             }
             if (this.right == 1) {
-                this.angle++;
+                this.angle += 1.5;
                 //this.moveRight();
             }
             if (this.up == 1) {
-                this.speed++;
+                //this.speed++;
+                this.speedx += this.accel*Math.cos(Math.PI/180*(this.angularmomentum-90));
+                this.speedy += this.accel*Math.sin(Math.PI/180*(this.angularmomentum-90));
+                this.angularmomentum = this.angle;
                 //this.moveUp();
             }
             if (this.down == 1) {
                 this.speed--;
+                this.angularmomentum = this.angle;
                 //this.moveDown();
             }
         }
@@ -208,6 +249,16 @@
                 gameObj.down = 1;
                 break;
 
+            case 81: //accel down
+                gameObj.accel -= gameObj.g;
+                //$('#accel_p').text(String(gameObj.accel));
+                break;
+
+            case 87: //accel up
+                gameObj.accel += gameObj.g;
+                //$('#accel_p').text(String(gameObj.accel));
+                break;
+
             default: return; // exit this handler for other keys
         }
         e.preventDefault(); // prevent the default action (scroll / move caret)
@@ -231,6 +282,15 @@
                 gameObj.down = 0;
                 break;
 
+            //case 81: //accel down
+            //    gameObj.accel -= this.g;
+            //    break;
+
+            //case 87: //accel up
+            //    gameObj.accel += this.g;
+            //    break;
+
+
             default: return; // exit this handler for other keys
         }
         e.preventDefault(); // prevent the default action (scroll / move caret)
@@ -238,7 +298,38 @@
     </script>
 </head>
 <body style="background:black;">
-<canvas id="myCanvas" width="1000" height="800" style="display:block;margin:auto;"></canvas>
+<div class="container">
+    <div class="row">
+        <div class="col-md-2">
+            <p>Safe acceleration: 1G (9.8 m/s)</p>
+            <p style="color:white;">Speed:</p>
+            <p id="speed_p" style="color:white;"></p>
+            <p>Speed (Max - 299 792 458 m/s)</p>
+            <div class="progress">
+                <div id="speed_progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+                </div>
+            </div>
+            <p>Safe acceleration: 1G (9.8 m/s)</p>
+            <p style="color:white;">Stress:</p>
+            <div class="progress">
+                <div id="stress_progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+                </div>
+            </div>
+            <p>Current acceleration:</p><p id="accel_p"></p>
+            <p style="color:white;">Acceleration:</p>
+            <div class="progress">
+                <div id="acceleration_progress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <canvas id="myCanvas" width="1000" height="800" style="display:block;margin:auto;"></canvas>
+        </div>
+        <div class="col-md-2">
+
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
